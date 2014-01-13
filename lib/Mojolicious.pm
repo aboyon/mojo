@@ -82,6 +82,20 @@ sub new {
   $self->log->path($home->rel_file("log/$mode.log"))
     if -w $home->rel_file('log');
 
+  # Live log in development mode
+  $r->websocket('/mojo/livelog' => sub {
+    my $c = shift;
+
+    Mojo::IOLoop->stream($c->tx->connection)->timeout(300);
+
+    my $cb = $c->app->log->on(message => sub {
+      my ($log, $level, @lines) = @_;
+      $c->send(qq/[@{[scalar localtime time]}] [$level] @{[join "\n", @lines]}/);
+    });
+
+    $c->on(finish => sub { shift->app->log->unsubscribe(message => $cb)});
+  }) if $mode eq 'development';
+
   $self->plugin($_)
     for qw(HeaderCondition DefaultHelpers TagHelpers EPLRenderer EPRenderer);
 

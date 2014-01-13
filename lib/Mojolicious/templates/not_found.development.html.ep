@@ -125,6 +125,13 @@
             % }
           </table>
         </div>
+        %= javascript begin
+          var ws = new WebSocket('<%= url_for('mojolivelog')->to_abs %>');
+          ws.onmessage = function(event) {
+            $('#log tr:first-child').remove();
+            $('#log table').append('<tr><td class="striped value"><pre>' + event.data + '</pre></td></tr>');
+          };
+        % end
       % }
     </div>
     <div id="footer">
